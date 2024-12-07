@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>D3 Network Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+        
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+
+        .node-label {
+            font-size: 12px;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <svg width="960" height="600"></svg>
+
+    <script>
+        // Sample JSON data
+        const graphData = {
+            "nodes": [
+                {"id": "1", "name": "Node 1"},
+                {"id": "2", "name": "Node 2"},
+                {"id": "3", "name": "Node 3"},
+                {"id": "4", "name": "Node 4"},
+				{"id": "5", "name": "Node 5"}
+            ],
+            "connections": [
+                {"id": "2", "predecessors": ["1"]},
+                {"id": "3", "predecessors": ["1"]},
+                {"id": "4", "predecessors": ["2", "3"]},
+				{"id": "5", "predecessors": ["4"]}
+            ]
+        };
+
+        // Create links array from connections
+        const links = [];
+        graphData.connections.forEach(conn => {
+            conn.predecessors.forEach(pred => {
+                links.push({
+                    source: pred,
+                    target: conn.id
+                });
+            });
+        });
+
+        const svg = d3.select("svg");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force("link", d3.forceLink(links).id(d => d.id))
+            .force("charge", d3.forceManyBody().strength(-300))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        // Create links
+        const link = svg.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke", "#999")
+            .attr("stroke-width", 1);
+
+        // Create nodes
+        const node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(graphData.nodes)
+            .enter().append("g");
+
+        // Add circles to nodes
+        node.append("circle")
+            .attr("r", 10)
+            .attr("fill", "#69b3a2")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        // Add labels to nodes
+        node.append("text")
+            .attr("class", "node-label")
+            .text(d => d.name)
+            .attr("x", 12)
+            .attr("y", 4);
+
+        // Update positions on simulation tick
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+    </script>
+</body>
+</html>

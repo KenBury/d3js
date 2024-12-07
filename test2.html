@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>D3 Top-Down Network Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+        
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+
+        .node-label {
+            font-size: 12px;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <svg width="960" height="600"></svg>
+
+    <script>
+        const graphData = {
+            "nodes": [
+                {"id": "1", "name": "Node 1"},
+                {"id": "2", "name": "Node 2"},
+                {"id": "3", "name": "Node 3"},
+                {"id": "4", "name": "Node 4"},
+                {"id": "5", "name": "Node 5"}
+            ],
+            "connections": [
+                {"id": "2", "predecessors": ["1"]},
+                {"id": "3", "predecessors": ["1"]},
+                {"id": "4", "predecessors": ["2", "3"]},
+                {"id": "5", "predecessors": ["4"]}
+            ]
+        };
+
+        const svg = d3.select("svg");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
+
+        // Define positions for nodes manually
+        const positions = {
+            "1": { x: width / 2, y: 50 },
+            "2": { x: width / 2 - 150, y: 150 },
+            "3": { x: width / 2 + 150, y: 150 },
+            "4": { x: width / 2, y: 250 },
+            "5": { x: width / 2, y: 350 }
+        };
+
+        // Create links array from connections
+        const links = [];
+        graphData.connections.forEach(conn => {
+            conn.predecessors.forEach(pred => {
+                links.push({
+                    source: pred,
+                    target: conn.id
+                });
+            });
+        });
+
+        // Add arrow marker definition
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "-0 -5 10 10")
+            .attr("refX", 20)
+            .attr("refY", 0)
+            .attr("orient", "auto")
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#999");
+
+        // Create links
+        const link = svg.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("x1", d => positions[d.source].x)
+            .attr("y1", d => positions[d.source].y)
+            .attr("x2", d => positions[d.target].x)
+            .attr("y2", d => positions[d.target].y);
+
+        // Create nodes
+        const node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(graphData.nodes)
+            .enter().append("g");
+
+        // Add circles to nodes
+        node.append("circle")
+            .attr("r", 15)
+            .attr("fill", "#69b3a2")
+            .attr("transform", d => `translate(${positions[d.id].x}, ${positions[d.id].y})`);
+
+        // Add labels to nodes
+        node.append("text")
+            .attr("class", "node-label")
+            .text(d => d.name)
+            .attr("x", d => positions[d.id].x + 20)
+            .attr("y", d => positions[d.id].y + 5);
+
+    </script>
+</body>
+</html>
